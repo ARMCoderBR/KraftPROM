@@ -18,3 +18,4 @@ void interrupt SYS_Interrupt(void)
         usart_isr();
 }
 
+#pragma config "FOSC"="INTOSCIO", "WDTE"="OFF", "PWRTE"="ON", "MCLRE"="OFF", "BOREN"="ON", "LVP"="OFF", "CPD"="OFF", "CP"="OFF"

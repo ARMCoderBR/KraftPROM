@@ -1,4 +1,5 @@
 #include <xc.h>
+#include <pic.h>
 #include "usart.h"
 
 #define USARTRXSIZE 48
@@ -74,6 +75,7 @@ void USART_Initialize()
 void USART_putcUSART(char c)
 {
     TXREG = c;
+    while(!TXSTAbits.TRMT);
 }
 
 /******************************************************************************
@@ -152,4 +154,10 @@ char usart_getch(void){
     if (usart_tail == USARTRXSIZE)
         usart_tail = 0;
     return c;
+}
+
+void USART_putstr(char *s){
+    
+    while (*s)
+        USART_putcUSART(*(s++));
 }

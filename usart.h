@@ -9,6 +9,7 @@
 #define	USART_H
 
 #include <xc.h>
+#include <pic.h>
 
 #define CLOCK_FREQ 4000000
 #define GetSystemClock() CLOCK_FREQ
@@ -55,6 +56,10 @@ void usart_isr(void);
 char usart_has_char(void);
 
 char usart_getch(void);
+
+void USART_putcUSART(char c);
+
+void USART_putstr(char *s);
 
 #endif	/* USART_H */
 

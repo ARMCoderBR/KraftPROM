@@ -12,10 +12,53 @@
 #include "system.h"
 #include "usart.h"
 
-#define PGCLK0 PORTAbits.RA1 = 0
-#define PGDAT0 PORTAbits.RA0 = 0
-#define PGCLK1 PORTAbits.RA1 = 1
-#define PGDAT1 PORTAbits.RA0 = 1
+#define PGCLK_TRIS TRISAbits.TRISA1
+#define PGDAT_TRIS TRISAbits.TRISA0
+#define PGCLK      PORTAbits.RA1
+#define PGDAT      PORTAbits.RA0
+
+#define EECE_TRIS  TRISAbits.TRISA7
+#define EEOE_TRIS  TRISAbits.TRISA6
+#define EEWE_TRIS  TRISBbits.TRISB7
+#define EECE       PORTAbits.RA7
+#define EEOE       PORTAbits.RA6
+#define EEWE       PORTBbits.RB7
+
+#define VERCLK_TRIS TRISBbits.TRISB3
+#define VERLOAD_TRIS TRISBbits.TRISB0
+#define VERREAD_TRIS TRISAbits.TRISA4
+#define VERCLK     PORTBbits.RB3
+#define VERLOAD    PORTBbits.RB0
+#define VERREAD    PORTAbits.RA4
+
+////////////////////////////////////////////////////////////////////////////////
+void io_init(){
+    
+    PGCLK = 0;
+    PGDAT = 0;
+    PGCLK_TRIS = 0;
+    PGDAT_TRIS = 0;
+
+    EECE = 1;
+    EEOE = 1;
+    EEWE = 1;
+    EECE_TRIS = 0;
+    EEOE_TRIS = 0;
+    EEWE_TRIS = 0;
+
+    VERCLK = 0;
+    VERLOAD = 1;
+    VERCLK_TRIS = 0;
+    VERLOAD_TRIS = 0;
+    VERREAD_TRIS = 1;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void crlf(){
+    
+    USART_putcUSART(13);
+    USART_putcUSART(10);
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 void send_addr_data(uint16_t addr, uint8_t data){
@@ -25,24 +68,57 @@ void send_addr_data(uint16_t addr, uint8_t data){
     for (i = 0; i < 8; i++){
         
         if (data & 0x80)
-            PGDAT1;
+            PGDAT=1;
         else
-            PGDAT0;
-        PGCLK1;
-        PGCLK0;
+            PGDAT=0;
+        PGCLK=1;
+        PGCLK=0;
         data <<= 1;
     }
 
     for (i = 0; i < 16; i++){
         
         if (addr & 0x8000)
-            PGDAT1;
+            PGDAT=1;
         else
-            PGDAT0;
-        PGCLK1;
-        PGCLK0;
+            PGDAT=0;
+        PGCLK=1;
+        PGCLK=0;
         addr <<= 1;
     }
+}
+
+////////////////////////////////////////////////////////////////////////////////
+uint8_t read_ee_data(uint16_t addr){
+    
+    uint8_t val = 0;
+    uint8_t msk = 0x80;
+    
+    send_addr_data(addr,0);
+    __delay_us(20);
+    EECE = 0;
+    EEOE = 0;
+    __delay_us(20);
+    VERLOAD = 0;
+    __delay_us(2);
+    VERLOAD = 1;
+    __delay_us(2);
+    EEOE = 1;
+    EECE = 1;
+    
+    int i;
+    for (i = 0; i < 8; i++){
+        
+        if (VERREAD)
+            val |= msk;
+        
+        msk >>= 1;
+        VERCLK = 1;
+        VERCLK = 0;
+        __delay_us(2);
+    }
+    
+    return val;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -107,6 +183,29 @@ void proc_addr(char c){
     }
 }
 
+const char dighex[] = "0123456789ABCDEF";
+////////////////////////////////////////////////////////////////////////////////
+void print_hex8(uint8_t c){
+
+    uint8_t ch = c >> 4;
+    c &= 0x0f;
+    
+    USART_putcUSART(dighex[ch]);
+    USART_putcUSART(dighex[c]);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void dump_ee_data(uint16_t addr){
+
+    crlf();
+    print_hex8(addr >> 8);
+    print_hex8(addr & 0xff);
+    USART_putcUSART(':');
+    
+    print_hex8(read_ee_data(addr));
+    crlf();
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 void main(void) {
     
@@ -118,11 +217,20 @@ void main(void) {
 
     ei();
     
-    PORTAbits.RA0 = 0;
-    PORTAbits.RA1 = 0;
-    TRISAbits.TRISA0 = 0;
-    TRISAbits.TRISA1 = 0;
+    io_init();
     
+    uint16_t i;
+    for (i = 0; i < 128; i++)
+        dump_ee_data(i);
+    
+    USART_putstr("==================\r\n");
+    dump_ee_data(0x51);
+    
+    send_addr_data(0x51,0);
+    __delay_us(2);
+    EECE = 0;
+    EEOE = 0;
+
     for (;;){
         
         if (usart_has_char()){
@@ -130,7 +238,8 @@ void main(void) {
             uint8_t c = usart_getch();
             USART_putcUSART(c);
 
-            proc_addr(c);
+            //dump_ee_data(0x51);
+
             
             __delay_us(100);
         }

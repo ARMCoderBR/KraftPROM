@@ -151,15 +151,16 @@ void write_ee_data(uint16_t addr, uint8_t data){
     send_addr_data(addr, data);
 
     PGDATEN = 0;
-    
+    __delay_us(1);
     EECE = 0;
-    __delay_us(1);
     EEWE = 0;
-    __delay_us(1);
+    __delay_us(1);      // Pulse width Twp
     EEWE = 1;
-    __delay_us(1);
+    EECE = 1;
+    
+    __delay_us(1);      // Hold Tdh
     PGDATEN = 1;
-    __delay_us(1000);
+    __delay_us(5000);   //Twc
 
 #if 0
     __delay_us(1);
@@ -180,8 +181,6 @@ void write_ee_data(uint16_t addr, uint8_t data){
         __delay_us(1);
     }
 #endif
-    
-    EECE = 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -192,6 +191,10 @@ void main(void) {
     INTCONbits.PEIE = 1;
     
     USART_putstr("CPS Tecnologia\r\n");
+//    __delay_ms(1000);
+//    USART_putstr("1\r\n");
+//    __delay_ms(1000);
+//    USART_putstr("2\r\n");
 
     ei();
     
@@ -210,7 +213,7 @@ void main(void) {
                 
                 case 'a':
                     send_addr_data(0x51,0);
-                    __delay_us(2);
+                    __delay_us(1);
                     EECE = 0;
                     EEOE = 0;
                     break;
@@ -222,7 +225,7 @@ void main(void) {
 
                 case 'c':
                     VERLOAD = 0;
-                    __delay_us(2);
+                    __delay_us(1);
                     VERLOAD = 1;
                     break;
 

@@ -146,6 +146,7 @@ void dump_ee_data(uint16_t addr){
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+#define POLLED 1
 void write_ee_data(uint16_t addr, uint8_t data){
     
     send_addr_data(addr, data);
@@ -157,29 +158,31 @@ void write_ee_data(uint16_t addr, uint8_t data){
     __delay_us(1);      // Pulse width Twp
     EEWE = 1;
     EECE = 1;
-    
     __delay_us(1);      // Hold Tdh
     PGDATEN = 1;
-    __delay_us(5000);   //Twc
 
-#if 0
+#if POLLED
     __delay_us(1);
+    EECE = 0;
     EEOE = 0;
     __delay_us(1);
     VERLOAD = 0;
     VERLOAD = 1;
     EEOE = 1;
-
+    EECE = 1;
     data >>= 7;
     while (VERREAD != data){
-        
+        EECE = 0;
         EEOE = 0;
         __delay_us(1);
         VERLOAD = 0;
         VERLOAD = 1;
         EEOE = 1;
+        EECE = 1;
         __delay_us(1);
     }
+#else
+    __delay_us(5000);   //Twc
 #endif
 }
 
@@ -241,8 +244,8 @@ void main(void) {
                     break;
 
                 case 'k':
-                    write_ee_data(0x00,0x83);
-                    write_ee_data(0x01,0x84);
+                    write_ee_data(0x00,0x85);
+                    write_ee_data(0x01,0x86);
                     break;
             }
             

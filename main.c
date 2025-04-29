@@ -12,24 +12,26 @@
 #include "system.h"
 #include "usart.h"
 
-#define PGCLK_TRIS TRISAbits.TRISA1
-#define PGDAT_TRIS TRISAbits.TRISA0
-#define PGCLK      PORTAbits.RA1
-#define PGDAT      PORTAbits.RA0
+#define PGCLK_TRIS   TRISAbits.TRISA1
+#define PGDAT_TRIS   TRISAbits.TRISA0
+#define PGDATEN_TRIS TRISBbits.TRISB4
+#define PGCLK        PORTAbits.RA1
+#define PGDAT        PORTAbits.RA0
+#define PGDATEN      PORTBbits.RB4
 
-#define EECE_TRIS  TRISAbits.TRISA7
-#define EEOE_TRIS  TRISAbits.TRISA6
-#define EEWE_TRIS  TRISBbits.TRISB7
-#define EECE       PORTAbits.RA7
-#define EEOE       PORTAbits.RA6
-#define EEWE       PORTBbits.RB7
+#define EECE_TRIS    TRISAbits.TRISA7
+#define EEOE_TRIS    TRISAbits.TRISA6
+#define EEWE_TRIS    TRISBbits.TRISB5
+#define EECE         PORTAbits.RA7
+#define EEOE         PORTAbits.RA6
+#define EEWE         PORTBbits.RB5
 
-#define VERCLK_TRIS TRISBbits.TRISB3
+#define VERCLK_TRIS  TRISBbits.TRISB3
 #define VERLOAD_TRIS TRISBbits.TRISB0
 #define VERREAD_TRIS TRISAbits.TRISA4
-#define VERCLK     PORTBbits.RB3
-#define VERLOAD    PORTBbits.RB0
-#define VERREAD    PORTAbits.RA4
+#define VERCLK       PORTBbits.RB3
+#define VERLOAD      PORTBbits.RB0
+#define VERREAD      PORTAbits.RA4
 
 ////////////////////////////////////////////////////////////////////////////////
 void io_init(){
@@ -38,7 +40,9 @@ void io_init(){
     PGDAT = 0;
     PGCLK_TRIS = 0;
     PGDAT_TRIS = 0;
-
+    PGDATEN = 1;
+    PGDATEN_TRIS = 0;
+    
     EECE = 1;
     EEOE = 1;
     EEWE = 1;
@@ -95,14 +99,12 @@ uint8_t read_ee_data(uint16_t addr){
     uint8_t msk = 0x80;
     
     send_addr_data(addr,0);
-    __delay_us(20);
+    __delay_us(1);
     EECE = 0;
     EEOE = 0;
-    __delay_us(20);
+    __delay_us(1);
     VERLOAD = 0;
-    __delay_us(2);
     VERLOAD = 1;
-    __delay_us(2);
     EEOE = 1;
     EECE = 1;
     
@@ -115,72 +117,10 @@ uint8_t read_ee_data(uint16_t addr){
         msk >>= 1;
         VERCLK = 1;
         VERCLK = 0;
-        __delay_us(2);
+        __delay_us(1);
     }
     
     return val;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-void proc_addr(char c){
-    
-    switch(c){
-        
-        case '0':
-            send_addr_data(0x0001,0x00);
-            break;
-        case '1':
-            send_addr_data(0x0002,0x11);
-            break;
-        case '2':
-            send_addr_data(0x0004,0x22);
-            break;
-        case '3':
-            send_addr_data(0x0008,0x33);
-            break;
-        case '4':
-            send_addr_data(0x0010,0x44);
-            break;
-        case '5':
-            send_addr_data(0x0020,0x55);
-            break;
-        case '6':
-            send_addr_data(0x0040,0x66);
-            break;
-        case '7':
-            send_addr_data(0x0080,0x77);
-            break;
-        case '8':
-            send_addr_data(0x0100,0x88);
-            break;
-        case '9':
-            send_addr_data(0x0200,0x99);
-            break;
-        case 'a':
-            send_addr_data(0x0400,0xaa);
-            break;
-        case 'b':
-            send_addr_data(0x0800,0xbb);
-            break;
-        case 'c':
-            send_addr_data(0x1000,0xcc);
-            break;
-        case 'd':
-            send_addr_data(0x2000,0xdd);
-            break;
-        case 'e':
-            send_addr_data(0x4000,0xee);
-            break;
-        case 'f':
-            send_addr_data(0x8000,0xff);
-            break;
-        case 'x':
-            send_addr_data(0x0000,0x00);
-            break;
-        case 'y':
-            send_addr_data(0xffff,0xff);
-            break;
-    }
 }
 
 const char dighex[] = "0123456789ABCDEF";
@@ -197,13 +137,51 @@ void print_hex8(uint8_t c){
 ////////////////////////////////////////////////////////////////////////////////
 void dump_ee_data(uint16_t addr){
 
-    crlf();
     print_hex8(addr >> 8);
     print_hex8(addr & 0xff);
     USART_putcUSART(':');
     
     print_hex8(read_ee_data(addr));
     crlf();
+}
+
+////////////////////////////////////////////////////////////////////////////////
+void write_ee_data(uint16_t addr, uint8_t data){
+    
+    send_addr_data(addr, data);
+
+    PGDATEN = 0;
+    
+    EECE = 0;
+    __delay_us(1);
+    EEWE = 0;
+    __delay_us(1);
+    EEWE = 1;
+    __delay_us(1);
+    PGDATEN = 1;
+    __delay_us(1000);
+
+#if 0
+    __delay_us(1);
+    EEOE = 0;
+    __delay_us(1);
+    VERLOAD = 0;
+    VERLOAD = 1;
+    EEOE = 1;
+
+    data >>= 7;
+    while (VERREAD != data){
+        
+        EEOE = 0;
+        __delay_us(1);
+        VERLOAD = 0;
+        VERLOAD = 1;
+        EEOE = 1;
+        __delay_us(1);
+    }
+#endif
+    
+    EECE = 1;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -220,16 +198,6 @@ void main(void) {
     io_init();
     
     uint16_t i;
-    for (i = 0; i < 128; i++)
-        dump_ee_data(i);
-    
-    USART_putstr("==================\r\n");
-    dump_ee_data(0x51);
-    
-    send_addr_data(0x51,0);
-    __delay_us(2);
-    EECE = 0;
-    EEOE = 0;
 
     for (;;){
         
@@ -238,8 +206,42 @@ void main(void) {
             uint8_t c = usart_getch();
             USART_putcUSART(c);
 
-            //dump_ee_data(0x51);
+            switch(c){
+                
+                case 'a':
+                    send_addr_data(0x51,0);
+                    __delay_us(2);
+                    EECE = 0;
+                    EEOE = 0;
+                    break;
+                
+                case 'b':
+                    EEOE = 1;
+                    EECE = 1;
+                    break;
 
+                case 'c':
+                    VERLOAD = 0;
+                    __delay_us(2);
+                    VERLOAD = 1;
+                    break;
+
+                case 'd':
+                    VERCLK = 1;
+                    VERCLK = 0;
+                    break;
+
+                case 'm':
+                    crlf();
+                    for (i = 0; i < 16; i++)
+                        dump_ee_data(i);
+                    break;
+
+                case 'k':
+                    write_ee_data(0x00,0x83);
+                    write_ee_data(0x01,0x84);
+                    break;
+            }
             
             __delay_us(100);
         }

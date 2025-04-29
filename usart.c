@@ -2,7 +2,7 @@
 #include <pic.h>
 #include "usart.h"
 
-#define USARTRXSIZE 48
+#define USARTRXSIZE 32
 char buf_usartrx[USARTRXSIZE];
 uint8_t usart_head = 0;
 uint8_t usart_tail = 0;

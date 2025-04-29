@@ -186,7 +186,27 @@ void write_ee_data(uint16_t addr, uint8_t data){
 #endif
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
+uint8_t getnibble(char c){
+
+    if ((c >='0') && (c <= '9')) return c - '0';
+    if ((c >='a') && (c <= 'f')) return c - 'a' + 10;
+    if ((c >='A') && (c <= 'F')) return c - 'A' + 10;
+
+    return 0;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+uint8_t bufprog[64];
+uint8_t nbytes = 0;
+uint8_t ctbytes = 0;
+uint16_t paddr = 0;
+uint8_t state = 0;
+uint8_t type = 0;
+uint8_t cksum = 0;
+uint8_t cksum2 = 0;
+
 void main(void) {
     
     USART_Initialize();
@@ -210,45 +230,149 @@ void main(void) {
         if (usart_has_char()){
             
             uint8_t c = usart_getch();
-            USART_putcUSART(c);
+            //USART_putcUSART(c);
 
-            switch(c){
+            if (c == ':'){
                 
-                case 'a':
-                    send_addr_data(0x51,0);
-                    __delay_us(1);
-                    EECE = 0;
-                    EEOE = 0;
-                    break;
-                
-                case 'b':
-                    EEOE = 1;
-                    EECE = 1;
-                    break;
-
-                case 'c':
-                    VERLOAD = 0;
-                    __delay_us(1);
-                    VERLOAD = 1;
-                    break;
-
-                case 'd':
-                    VERCLK = 1;
-                    VERCLK = 0;
-                    break;
-
-                case 'm':
-                    crlf();
-                    for (i = 0; i < 16; i++)
-                        dump_ee_data(i);
-                    break;
-
-                case 'k':
-                    write_ee_data(0x00,0x85);
-                    write_ee_data(0x01,0x86);
-                    break;
+                nbytes = 0; state = 0; paddr = 0; type = 0; ctbytes = 0; cksum = 0; cksum2 = 0; continue;
             }
             
+            switch(state){
+                
+                case 0:
+                    nbytes = getnibble(c);
+                    break;
+                case 1:
+                    nbytes <<= 4;
+                    nbytes |= getnibble(c);
+                    cksum2 += nbytes;
+                    break;
+
+                case 2:
+                    paddr = getnibble(c);
+                    break;
+                case 3:
+                    paddr <<= 4;
+                    paddr |= getnibble(c);
+                    cksum2 += paddr;
+                    break;
+                case 4:
+                    paddr <<= 4;
+                    paddr |= getnibble(c);
+                    break;
+                case 5:
+                    paddr <<= 4;
+                    paddr |= getnibble(c);
+                    cksum2 += paddr;
+                    break;
+            
+                case 6:
+                    type |= getnibble(c);
+                    break;
+                case 7:
+                    type <<= 4;
+                    type |= getnibble(c);
+                    cksum2 += type;
+                    break;
+            
+                case 8:
+                    bufprog[ctbytes] = getnibble(c);
+                    break;
+                case 9:
+                    bufprog[ctbytes] <<=4;
+                    bufprog[ctbytes] |= getnibble(c);
+                    cksum2 += bufprog[ctbytes];
+                    ctbytes++;
+                    break;
+
+                case 10:
+                    cksum = getnibble(c);
+                    break;
+                case 11:
+                    cksum <<=4;
+                    cksum |= getnibble(c);
+                    if (!((cksum + cksum2)&0xFF)){
+                        USART_putstr("\r\nChecksum OK\r\n");
+                        USART_putstr("ADDR:");
+                        print_hex8(paddr>>8);
+                        print_hex8(paddr);
+                        USART_putstr("  BS:");
+                        print_hex8(nbytes);
+                        crlf();
+                        for (i = 0; i < nbytes; i++){
+                            write_ee_data(paddr+i,bufprog[i]);
+                        }
+                        for (i = 0; i < nbytes; i++)
+                            dump_ee_data(paddr+i);
+                    }
+                    else{
+                        USART_putstr("\r\nChecksum ERR:");
+                        print_hex8(cksum);
+                        print_hex8(cksum2);
+                        crlf();
+                    }
+                    break;
+            }
+
+            switch(state){
+
+                case 7:
+                    if (nbytes)
+                        state++;
+                    else
+                        state = 10;
+                case 9:
+                    if (ctbytes < nbytes)
+                        state = 8;
+                    else
+                        state = 10;
+                    break;
+                    
+                default:
+                    state++;
+            }
+            
+            
+            
+            
+            
+            
+//            switch(c){
+//                
+//                case 'a':
+//                    send_addr_data(0x51,0);
+//                    __delay_us(1);
+//                    EECE = 0;
+//                    EEOE = 0;
+//                    break;
+//                
+//                case 'b':
+//                    EEOE = 1;
+//                    EECE = 1;
+//                    break;
+//
+//                case 'c':
+//                    VERLOAD = 0;
+//                    __delay_us(1);
+//                    VERLOAD = 1;
+//                    break;
+//
+//                case 'd':
+//                    VERCLK = 1;
+//                    VERCLK = 0;
+//                    break;
+//
+//                case 'm':
+//                    crlf();
+//                    for (i = 0; i < 16; i++)
+//                        dump_ee_data(i);
+//                    break;
+//
+//                case 'k':
+//                    write_ee_data(0x00,0x85);
+//                    write_ee_data(0x01,0x86);
+//                    break;
+//            }
             __delay_us(100);
         }
     }

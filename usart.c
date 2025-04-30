@@ -29,6 +29,9 @@ void USART_Initialize()
 {
     unsigned char c;
 
+    RTS = 0;
+    RTS_TRIS = 0;
+
     di();
 
     usart_head = 0;
@@ -129,7 +132,11 @@ void usart_isr(void){
         __USART_getcUSART();
         return;
     }
-    
+    else
+    if (usart_qty == (USARTRXSIZE - 8)){
+        RTS = 1;
+    }
+
     usart_qty++;
     buf_usartrx[usart_head++] = __USART_getcUSART();
     if (usart_head == USARTRXSIZE)
@@ -143,8 +150,11 @@ char usart_has_char(void){
 
 char usart_getch(void){
     
-    if (!usart_qty)
+    if (!usart_qty){
+        
+        RTS = 0;
         return (0);
+    }
     
     di();
     usart_qty--;

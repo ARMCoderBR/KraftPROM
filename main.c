@@ -33,6 +33,7 @@
 #define VERLOAD      PORTBbits.RB0
 #define VERREAD      PORTAbits.RA4
 
+
 ////////////////////////////////////////////////////////////////////////////////
 void io_init(){
     
@@ -147,7 +148,7 @@ void dump_ee_data(uint16_t addr){
 
 ////////////////////////////////////////////////////////////////////////////////
 #define POLLED 1
-void write_ee_data(uint16_t addr, uint8_t data){
+int write_ee_data(uint16_t addr, uint8_t data){
     
     send_addr_data(addr, data);
 
@@ -171,6 +172,8 @@ void write_ee_data(uint16_t addr, uint8_t data){
     EEOE = 1;
     EECE = 1;
     data >>= 7;
+    uint16_t timeout = 5000;
+    __delay_us(10);
     while (VERREAD != data){
         EECE = 0;
         EEOE = 0;
@@ -179,11 +182,14 @@ void write_ee_data(uint16_t addr, uint8_t data){
         VERLOAD = 1;
         EEOE = 1;
         EECE = 1;
-        __delay_us(1);
+        __delay_ms(1);
+        --timeout;
+        if (!timeout) return -1;
     }
 #else
     __delay_us(5000);   //Twc
 #endif
+    return 0;
 }
 
 
@@ -230,9 +236,14 @@ void main(void) {
         if (usart_has_char()){
             
             uint8_t c = usart_getch();
-            //USART_putcUSART(c);
+            USART_putcUSART(c);
 
-            if (c == ':'){
+            if ((c == 'x') && (state >= 99)){
+                state = 0;
+                USART_putstr("\r\nReset\r\n");
+             }
+            
+            if ((c == ':') && (state != 99)){
                 
                 nbytes = 0; state = 0; paddr = 0; type = 0; ctbytes = 0; cksum = 0; cksum2 = 0; continue;
             }
@@ -300,16 +311,28 @@ void main(void) {
                         print_hex8(nbytes);
                         crlf();
                         for (i = 0; i < nbytes; i++){
-                            write_ee_data(paddr+i,bufprog[i]);
+                            if (write_ee_data(paddr+i,bufprog[i]) < 0){
+                                USART_putstr("Timeout\r\n");
+                                state = 99;
+                                break;
+                            };
                         }
-                        for (i = 0; i < nbytes; i++)
-                            dump_ee_data(paddr+i);
+                        for (i = 0; i < nbytes; i++){
+                            if (read_ee_data(paddr+i) != bufprog[i]){//dump_ee_data(paddr+i);
+                                USART_putstr("VERIFY ERROR\r\n"); 
+                                state = 99;
+                                break;
+                            }
+                        }
+                        if (state != 99)
+                            USART_putstr("Verify OK.\r\n"); 
                     }
                     else{
-                        USART_putstr("\r\nChecksum ERR:");
+                        USART_putstr("\r\nHEX Checksum ERR:");
                         print_hex8(cksum);
                         print_hex8(cksum2);
                         crlf();
+                        state = 99;
                     }
                     break;
             }
@@ -327,14 +350,13 @@ void main(void) {
                     else
                         state = 10;
                     break;
-                    
+                case 99:
+                    USART_putstr("\r\nPress 'x' to restart process...\r\n");
+                    state++;
+                    break;
                 default:
                     state++;
             }
-            
-            
-            
-            
             
             
 //            switch(c){

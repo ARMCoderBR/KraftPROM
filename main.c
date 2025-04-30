@@ -219,7 +219,7 @@ void main(void) {
 
     INTCONbits.PEIE = 1;
     
-    USART_putstr("CPS Tecnologia\r\n");
+    USART_putstr("EEPROM Programmer by Milton (ARMCoder)\r\n");
 //    __delay_ms(1000);
 //    USART_putstr("1\r\n");
 //    __delay_ms(1000);
@@ -238,7 +238,7 @@ void main(void) {
             uint8_t c = usart_getch();
             USART_putcUSART(c);
 
-            if ((c == 'x') && (state >= 99)){
+            if ((c == 'x') /*&& (state >= 99)*/){
                 state = 0;
                 USART_putstr("\r\nReset\r\n");
              }
@@ -358,43 +358,6 @@ void main(void) {
                     state++;
             }
             
-            
-//            switch(c){
-//                
-//                case 'a':
-//                    send_addr_data(0x51,0);
-//                    __delay_us(1);
-//                    EECE = 0;
-//                    EEOE = 0;
-//                    break;
-//                
-//                case 'b':
-//                    EEOE = 1;
-//                    EECE = 1;
-//                    break;
-//
-//                case 'c':
-//                    VERLOAD = 0;
-//                    __delay_us(1);
-//                    VERLOAD = 1;
-//                    break;
-//
-//                case 'd':
-//                    VERCLK = 1;
-//                    VERCLK = 0;
-//                    break;
-//
-//                case 'm':
-//                    crlf();
-//                    for (i = 0; i < 16; i++)
-//                        dump_ee_data(i);
-//                    break;
-//
-//                case 'k':
-//                    write_ee_data(0x00,0x85);
-//                    write_ee_data(0x01,0x86);
-//                    break;
-//            }
             __delay_us(100);
         }
     }

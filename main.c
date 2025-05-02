@@ -231,6 +231,8 @@ void main(void) {
     
     uint16_t i;
 
+    read_ee_data(0);    // Força limpeza dos SHRs
+    
     for (;;){
         
         if (usart_has_char()){

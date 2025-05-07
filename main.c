@@ -100,7 +100,7 @@ uint8_t read_ee_data(uint16_t addr){
     uint8_t msk = 0x80;
     
     send_addr_data(addr,0);
-    __delay_us(1);
+    //__delay_us(1);
     EECE = 0;
     EEOE = 0;
     __delay_us(1);
@@ -118,7 +118,7 @@ uint8_t read_ee_data(uint16_t addr){
         msk >>= 1;
         VERCLK = 1;
         VERCLK = 0;
-        __delay_us(1);
+        //__delay_us(1);
     }
     
     return val;
@@ -173,7 +173,7 @@ int write_ee_data(uint16_t addr, uint8_t data){
     EECE = 1;
     data >>= 7;
     uint16_t timeout = 5000;
-    __delay_us(10);
+    //__delay_us(10);
     while (VERREAD != data){
         EECE = 0;
         EEOE = 0;
@@ -182,7 +182,7 @@ int write_ee_data(uint16_t addr, uint8_t data){
         VERLOAD = 1;
         EEOE = 1;
         EECE = 1;
-        __delay_ms(1);
+        __delay_us(100);
         --timeout;
         if (!timeout) return -1;
     }
@@ -360,7 +360,7 @@ void main(void) {
                     state++;
             }
             
-            __delay_us(100);
+            //__delay_us(100);
         }
     }
 

@@ -245,6 +245,10 @@ void main(void) {
                 USART_putstr("\r\nReset\r\n");
             }
             
+            if ((c == '?') && (state != 99)){
+                USART_putstr("\r\nV1.00\r\n");
+            }
+
             if ((c == ':') && (state != 99)){
                 
                 nbytes = 0; state = 0; paddr = 0; type = 0; ctbytes = 0; cksum = 0; cksum2 = 0; continue;
@@ -376,6 +380,9 @@ void main(void) {
                     print_hex8(nbytes);
                     print_hex8(paddr>>8);
                     print_hex8(paddr&0xFF);
+                    USART_putcUSART('0');   // Type 0
+                    USART_putcUSART('0');
+                    
                     for (i = 0; i < nbytes; i++){
                         uint8_t c = read_ee_data(paddr+i);
                         print_hex8(c);
@@ -384,13 +391,6 @@ void main(void) {
                     print_hex8(1+(cksum^0xFF));
                     crlf();
                     break;
-
-                    
-                    
-                    
-                    
-                    
-            
             }
 
             switch(state){

@@ -2,6 +2,8 @@
 
 EEPROM Programmer
 
+![EEPROM Programmer](/programmer.jpg)
+
 ## Description
 
 A Hardware + Software suite to program EEPROMs (28C16 and 28C64).
@@ -27,7 +29,7 @@ Firmware: Microchip PIC16F628A under MPLABX IDE 6.X and XC8 2.X (no PRO License
           different PIC.
 
 ## Hardware Materials
-
+```
 1  x  Universal PCB or Breadboard
 1  x  PIC16F628A
 3  x  74LS164 or HC164
@@ -46,6 +48,7 @@ Firmware: Microchip PIC16F628A under MPLABX IDE 6.X and XC8 2.X (no PRO License
 1+ x  28C16 or 28C64 as target(s)
 
 Wires, solder, etc.
+```
 
 See picture and schematics.
 

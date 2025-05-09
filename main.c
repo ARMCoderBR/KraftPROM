@@ -238,20 +238,27 @@ void main(void) {
         if (usart_has_char()){
             
             uint8_t c = usart_getch();
-            USART_putcUSART(c);
+            //USART_putcUSART(c);
 
             if ((c == 'x') /*&& (state >= 99)*/){
                 state = 0;
                 USART_putstr("\r\nReset\r\n");
-             }
+            }
             
             if ((c == ':') && (state != 99)){
                 
                 nbytes = 0; state = 0; paddr = 0; type = 0; ctbytes = 0; cksum = 0; cksum2 = 0; continue;
             }
+
+            if ((c == '<') && (state != 99)){
+                
+                nbytes = 0; state = 20; paddr = 0; type = 0; ctbytes = 0; cksum = 0; cksum2 = 0; continue;
+            }
             
             switch(state){
                 
+                ////////////////////////////////////////////////////////////////
+                // Programming from INTEL HEX Line
                 case 0:
                     nbytes = getnibble(c);
                     break;
@@ -337,6 +344,53 @@ void main(void) {
                         state = 99;
                     }
                     break;
+            
+                ////////////////////////////////////////////////////////////////
+                // Reading and outputting INTEL HEX Line
+                case 20:
+                    paddr = getnibble(c);
+                    break;
+                case 21:
+                    paddr <<= 4;
+                    paddr |= getnibble(c);
+                    cksum = paddr;
+                    break;
+                case 22:
+                    paddr <<= 4;
+                    paddr |= getnibble(c);
+                    break;
+                case 23:
+                    paddr <<= 4;
+                    paddr |= getnibble(c);
+                    cksum += paddr;
+                    break;
+                case 24:
+                    nbytes = getnibble(c);
+                    break;
+                case 25:
+                    nbytes <<= 4;
+                    nbytes |= getnibble(c);
+                    cksum += nbytes;
+
+                    USART_putcUSART(':');
+                    print_hex8(nbytes);
+                    print_hex8(paddr>>8);
+                    print_hex8(paddr&0xFF);
+                    for (i = 0; i < nbytes; i++){
+                        uint8_t c = read_ee_data(paddr+i);
+                        print_hex8(c);
+                        cksum += c;
+                    }
+                    print_hex8(1+(cksum^0xFF));
+                    crlf();
+                    break;
+
+                    
+                    
+                    
+                    
+                    
+            
             }
 
             switch(state){

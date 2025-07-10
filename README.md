@@ -69,6 +69,10 @@ As said, if you have the recommended PIC16F628A, you can program it with the
 supplied HEX file. This is the easiest way because you don't need to install
 the complete MPLABX and the C compiler.
 
+**You will still need a PIC programming tool, that most likely you won't have.
+Since programming this PIC is a once in a lifetime event, you'd better borrow
+the programmer from a friend or use the company's programmer when no one is looking...**
+
 The rest of the build is a no-brainer, just be careful with the connections.
 The Serial-to-TTL adapter is very practical, it supplies the power to the
 hardware (5VDC) and the communication signals (TX/RX/CTS).

@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "Kraft80")(type "KiCad")(uri "${KIPRJMOD}/Kraft80.pretty/Kraft80.pretty")(options "")(descr ""))
+)

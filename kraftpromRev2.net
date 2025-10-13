@@ -1,8 +1,8 @@
 (export (version "E")
   (design
     (source "/home/milton/kraft80/hardware/KraftPROM/kraftprom.kicad_sch")
-    (date "2025-10-13T15:40:44-0300")
-    (tool "Eeschema 9.0.3-9.0.3-0~ubuntu24.04.1")
+    (date "2025-09-16T19:24:40-0300")
+    (tool "Eeschema 9.0.4-9.0.4-0~ubuntu24.04.1")
     (sheet (number "1") (name "/") (tstamps "/")
       (title_block
         (title "KraftPROM: EEPROM 28C16/28C64 Programmer")
@@ -575,7 +575,7 @@
     (library (logical "Jumper")
       (uri "/usr/share/kicad/symbols//Jumper.kicad_sym"))
     (library (logical "kraft80")
-      (uri "/home/milton/kraft80/hardware/KraftPROM/kraft80.kicad_sym")))
+      (uri "/home/milton/.local/share/kicad/9.0/symbols/kraft80.kicad_sym")))
   (nets
     (net (code "1") (name "+5V") (class "Default")
       (node (ref "C1") (pin "1") (pintype "passive"))
